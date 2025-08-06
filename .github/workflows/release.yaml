@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+      tags:
+        - 'v*.*.*' # Matches tags like v1.2.3, v0.1.0, etc.
   # Trigger this workflow on a manual workflow dispatch.
   workflow_dispatch:
     inputs:
