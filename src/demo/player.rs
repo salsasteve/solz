@@ -29,15 +29,12 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-/// The player character.
-pub fn player(
-    max_speed: f32,
-    player_assets: &PlayerAssets,
-    texture_atlas_layouts: &mut Assets<TextureAtlasLayout>,
+pub fn setup_player(
+    player_assets: Res<PlayerAssets>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) -> impl Bundle {
-    // A texture atlas is a way to split a single image into a grid of related images.
-    // You can learn more in this example: https://github.com/bevyengine/bevy/blob/latest/examples/2d/texture_atlas.rs
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 6, 2, Some(UVec2::splat(1)), None);
+    // 22 frames, each 128x128, in a single row
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 22, 1, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     let player_animation = PlayerAnimation::new();
 
@@ -45,7 +42,7 @@ pub fn player(
         Name::new("Player"),
         Player,
         Sprite {
-            image: player_assets.ducky.clone(),
+            image: player_assets.idle.clone(),
             texture_atlas: Some(TextureAtlas {
                 layout: texture_atlas_layout,
                 index: player_animation.get_atlas_index(),
@@ -54,7 +51,7 @@ pub fn player(
         },
         Transform::from_scale(Vec2::splat(8.0).extend(1.0)),
         MovementController {
-            max_speed,
+            max_speed: 400.0,
             ..default()
         },
         ScreenWrap,
@@ -99,28 +96,22 @@ fn record_player_directional_input(
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
-    ducky: Handle<Image>,
-    #[dependency]
-    pub steps: Vec<Handle<AudioSource>>,
+    idle: Handle<Image>,
+    jump: Handle<Image>,
+    running: Handle<Image>,
+    sliding: Handle<Image>,
+    wall_slide: Handle<Image>,
 }
 
 impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            ducky: assets.load_with_settings(
-                "images/ducky.png",
-                |settings: &mut ImageLoaderSettings| {
-                    // Use `nearest` image sampling to preserve pixel art style.
-                    settings.sampler = ImageSampler::nearest();
-                },
-            ),
-            steps: vec![
-                assets.load("audio/sound_effects/step1.ogg"),
-                assets.load("audio/sound_effects/step2.ogg"),
-                assets.load("audio/sound_effects/step3.ogg"),
-                assets.load("audio/sound_effects/step4.ogg"),
-            ],
+            idle: assets.load("images/entities/player/player_idle.png"),
+            jump: assets.load("images/entities/player/player_jump.png"),
+            running: assets.load("images/entities/player/player_running.png"),
+            sliding: assets.load("images/entities/player/player_sliding.png"),
+            wall_slide: assets.load("images/entities/player/player_wall_slide.png"),
         }
     }
 }
