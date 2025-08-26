@@ -5,33 +5,18 @@
 //! - [Timers](https://github.com/bevyengine/bevy/blob/latest/examples/time/timers.rs)
 
 use bevy::prelude::*;
-use rand::prelude::*;
 use std::time::Duration;
 
-use crate::{
-    AppSystems, PausableSystems,
-    audio::sound_effect,
-    demo::{movement::MovementController, player::PlayerAssets},
-};
+use crate::demo::movement::MovementController;
 
+/// Registers the player animation component and systems.
 pub(super) fn plugin(app: &mut App) {
-    // Animate and play sound effects based on controls.
     app.register_type::<PlayerAnimation>();
-    app.add_systems(
-        Update,
-        (
-            update_animation_timer.in_set(AppSystems::TickTimers),
-            (
-                update_animation_movement,
-                update_animation_atlas,
-                trigger_step_sound_effect,
-            )
-                .chain()
-                .run_if(resource_exists::<PlayerAssets>)
-                .in_set(AppSystems::Update),
-        )
-            .in_set(PausableSystems),
-    );
+    app.add_systems(Update, (
+        update_animation_timer,
+        update_animation_movement,
+        update_animation_atlas,
+    ));
 }
 
 /// Update the sprite direction and animation state (idling/walking).
@@ -74,22 +59,7 @@ fn update_animation_atlas(mut query: Query<(&PlayerAnimation, &mut Sprite)>) {
 
 /// If the player is moving, play a step sound effect synchronized with the
 /// animation.
-fn trigger_step_sound_effect(
-    mut commands: Commands,
-    player_assets: Res<PlayerAssets>,
-    mut step_query: Query<&PlayerAnimation>,
-) {
-    for animation in &mut step_query {
-        if animation.state == PlayerAnimationState::Walking
-            && animation.changed()
-            && (animation.frame == 2 || animation.frame == 5)
-        {
-            // let rng = &mut rand::rng();
-            // let random_step = player_assets.steps.choose(rng).unwrap().clone();
-            // commands.spawn(sound_effect(random_step));
-        }
-    }
-}
+// Step sound effect system removed for minimal debug setup.
 
 /// Component that tracks player's animation state.
 /// It is tightly bound to the texture atlas we use.

@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use crate::{
     asset_tracking::LoadResource,
     audio::music,
+    demo::helpers,
     demo::player::{PlayerAssets, setup_player},
     screens::Screen,
 };
@@ -36,7 +37,12 @@ pub fn spawn_level(
     level_assets: Res<LevelAssets>,
     player_assets: Res<PlayerAssets>,
     texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    asset_server: Res<AssetServer>,
 ) {
+    info!("Spawning level and music");
+
+    // Check if music asset is loaded
+    info!("Music handle: {:?}", level_assets.music);
     commands.spawn((
         Name::new("Level"),
         Transform::default(),
@@ -50,4 +56,10 @@ pub fn spawn_level(
             )
         ],
     ));
+    let map_handle = helpers::tiled::TiledMapHandle(asset_server.load("maps/map1.tmx"));
+
+    commands.spawn(helpers::tiled::TiledMapBundle {
+        tiled_map: map_handle,
+        ..Default::default()
+    });
 }

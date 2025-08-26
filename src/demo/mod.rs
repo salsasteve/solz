@@ -4,8 +4,10 @@
 //! to get a feeling for the template.
 
 use bevy::prelude::*;
+use bevy_ecs_tilemap::prelude::*;
 
 mod animation;
+pub mod helpers;
 pub mod level;
 mod movement;
 pub mod player;
@@ -17,4 +19,6 @@ pub(super) fn plugin(app: &mut App) {
         movement::plugin,
         player::plugin,
     ));
+    app.add_plugins(TilemapPlugin);
+    app.add_plugins(helpers::tiled::TiledMapPlugin);
 }
