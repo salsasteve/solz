@@ -12,11 +12,14 @@ use crate::demo::movement::MovementController;
 /// Registers the player animation component and systems.
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<PlayerAnimation>();
-    app.add_systems(Update, (
-        update_animation_timer,
-        update_animation_movement,
-        update_animation_atlas,
-    ));
+    app.add_systems(
+        Update,
+        (
+            update_animation_timer,
+            update_animation_movement,
+            update_animation_atlas,
+        ),
+    );
 }
 
 /// Update the sprite direction and animation state (idling/walking).
