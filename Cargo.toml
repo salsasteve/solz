@@ -3,6 +3,7 @@ name = "solz"
 authors = ["solz"]
 version = "0.1.0"
 edition = "2024"
+default-run = "solz"
 
 [dependencies]
 bevy = { version = "0.16.1", features = ["wayland"] }
