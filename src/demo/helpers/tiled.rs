@@ -47,7 +47,6 @@ pub struct TiledMap {
     pub tilemap_textures: HashMap<usize, TilemapTexture>,
 
     // The offset into the tileset_images for each tile id within each tileset.
-    #[cfg(not(feature = "atlas"))]
     pub tile_image_offsets: HashMap<(usize, tiled::TileId), u32>,
 }
 
@@ -123,49 +122,36 @@ impl AssetLoader for TiledLoader {
             .map_err(|e| std::io::Error::other(format!("Could not load TMX map: {e}")))?;
 
         let mut tilemap_textures = HashMap::default();
-        #[cfg(not(feature = "atlas"))]
         let mut tile_image_offsets = HashMap::default();
 
         for (tileset_index, tileset) in map.tilesets().iter().enumerate() {
             let tilemap_texture = match &tileset.image {
                 None => {
-                    #[cfg(feature = "atlas")]
-                    {
-                        info!(
-                            "Skipping image collection tileset '{}' which is incompatible with atlas feature",
-                            tileset.name
-                        );
-                        continue;
-                    }
-
-                    #[cfg(not(feature = "atlas"))]
-                    {
-                        let mut tile_images: Vec<Handle<Image>> = Vec::new();
-                        for (tile_id, tile) in tileset.tiles() {
-                            if let Some(img) = &tile.image {
-                                // The load context path is the TMX file itself. If the file is at the root of the
-                                // assets/ directory structure then the tmx_dir will be empty, which is fine.
-                                let tmx_dir = load_context
-                                    .path()
-                                    .parent()
-                                    .expect("The asset load context was empty.");
-                                info!("TMX directory: {:?}", tmx_dir);
-                                info!("Image source: {:?}", img.source);
-                                let tile_path = tmx_dir.join(&img.source);
-                                info!("Joined path: {:?}", tile_path);
-                                let asset_path = AssetPath::from(tile_path);
-                                info!(
-                                    "Loading tile image from {asset_path:?} as image ({tileset_index}, {tile_id})"
-                                );
-                                let texture: Handle<Image> = load_context.load(asset_path.clone());
-                                tile_image_offsets
-                                    .insert((tileset_index, tile_id), tile_images.len() as u32);
-                                tile_images.push(texture.clone());
-                            }
+                    let mut tile_images: Vec<Handle<Image>> = Vec::new();
+                    for (tile_id, tile) in tileset.tiles() {
+                        if let Some(img) = &tile.image {
+                            // The load context path is the TMX file itself. If the file is at the root of the
+                            // assets/ directory structure then the tmx_dir will be empty, which is fine.
+                            let tmx_dir = load_context
+                                .path()
+                                .parent()
+                                .expect("The asset load context was empty.");
+                            info!("TMX directory: {:?}", tmx_dir);
+                            info!("Image source: {:?}", img.source);
+                            let tile_path = tmx_dir.join(&img.source);
+                            info!("Joined path: {:?}", tile_path);
+                            let asset_path = AssetPath::from(tile_path);
+                            info!(
+                                "Loading tile image from {asset_path:?} as image ({tileset_index}, {tile_id})"
+                            );
+                            let texture: Handle<Image> = load_context.load(asset_path.clone());
+                            tile_image_offsets
+                                .insert((tileset_index, tile_id), tile_images.len() as u32);
+                            tile_images.push(texture.clone());
                         }
-
-                        TilemapTexture::Vector(tile_images)
                     }
+
+                    TilemapTexture::Vector(tile_images)
                 }
                 Some(img) => {
                     // The load context path is the TMX file itself. If the file is at the root of the
@@ -196,7 +182,6 @@ impl AssetLoader for TiledLoader {
         let asset_map = TiledMap {
             map,
             tilemap_textures,
-            #[cfg(not(feature = "atlas"))]
             tile_image_offsets,
         };
 
@@ -361,11 +346,9 @@ pub fn process_loaded_maps(
 
                                 let texture_index = match tilemap_texture {
                                     TilemapTexture::Single(_) => layer_tile.id(),
-                                    #[cfg(not(feature = "atlas"))]
                                     TilemapTexture::Vector(_) =>
                                         *tiled_map.tile_image_offsets.get(&(tileset_index, layer_tile.id()))
                                         .expect("The offset into to image vector should have been saved during the initial load."),
-                                    #[cfg(not(feature = "atlas"))]
                                     _ => unreachable!()
                                 };
 

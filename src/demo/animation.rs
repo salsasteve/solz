@@ -63,7 +63,6 @@ fn update_animation_atlas(mut query: Query<(&PlayerAnimation, &mut Sprite)>) {
 /// If the player is moving, play a step sound effect synchronized with the
 /// animation.
 // Step sound effect system removed for minimal debug setup.
-
 /// Component that tracks player's animation state.
 /// It is tightly bound to the texture atlas we use.
 #[derive(Component, Reflect)]

@@ -837,6 +837,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_lint"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58ec737f45d4ea29db5bed711f96b300c8d2bc45b0e913541a9a0bf4cbe0fb7b"
+
+[[package]]
 name = "bevy_log"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2213,13 +2219,14 @@ dependencies = [
 [[package]]
 name = "getrandom"
 version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26145e563e54f2cadc477553f1ec5ee650b00862f0a58bcd12cbdc5f0ea2d2f4"
+source = "git+https://github.com/benfrankel/getrandom#8df8846f07478cc3c6ace1fe32c193efe3f8a884"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi",
  "wasi 0.14.2+wasi-0.2.4",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -4044,11 +4051,14 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ecs_tilemap",
+ "bevy_lint",
+ "getrandom 0.3.3",
  "log",
  "rand 0.9.2",
  "thiserror 2.0.16",
  "tiled",
  "tracing",
+ "zstd",
 ]
 
 [[package]]
