@@ -1,5 +1,3 @@
-//! Player-specific behavior.
-
 use bevy::prelude::*;
 
 use crate::demo::animation::PlayerAnimation;
@@ -18,8 +16,16 @@ pub fn setup_player(
     player_assets: Res<PlayerAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) -> impl Bundle {
-    let layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 22, 1, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    let idle_layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 22, 1, None, None);
+    let idle_handle = texture_atlas_layouts.add(idle_layout);
+    let running_layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 8, 1, None, None);
+    let running_handle = texture_atlas_layouts.add(running_layout);
+    let jumping_layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 1, 1, None, None);
+    let jumping_handle = texture_atlas_layouts.add(jumping_layout);
+    let sliding_layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 1, 1, None, None);
+    let sliding_handle = texture_atlas_layouts.add(sliding_layout);
+    let wall_sliding_layout = TextureAtlasLayout::from_grid(UVec2::new(14, 18), 1, 1, None, None);
+    let wall_sliding_handle = texture_atlas_layouts.add(wall_sliding_layout);
     let player_animation = PlayerAnimation::new();
     (
         Name::new("Player"),
@@ -27,18 +33,25 @@ pub fn setup_player(
         Sprite {
             image: player_assets.idle.clone(),
             texture_atlas: Some(TextureAtlas {
-                layout: texture_atlas_layout,
+                layout: idle_handle.clone(),
                 index: player_animation.get_atlas_index(),
             }),
             ..default()
         },
-        Transform::from_scale(Vec2::splat(2.0).extend(1.0)),
+        Transform::from_scale(Vec2::splat(2.5).extend(1.0)),
         MovementController {
-            max_speed: 400.0,
+            max_speed: 100.0,
             ..default()
         },
         ScreenWrap,
         player_animation,
+        PlayerAtlases {
+            idle: idle_handle,
+            running: running_handle,
+            jumping: jumping_handle,
+            sliding: sliding_handle,
+            wall_sliding: wall_sliding_handle,
+        },
     )
 }
 
@@ -70,19 +83,44 @@ fn record_player_directional_input(
     }
 }
 
+#[derive(Component, Debug, Clone, Reflect)]
+#[reflect(Component)]
+pub struct PlayerAtlases {
+    pub idle: Handle<TextureAtlasLayout>,
+    pub running: Handle<TextureAtlasLayout>,
+    pub jumping: Handle<TextureAtlasLayout>,
+    pub sliding: Handle<TextureAtlasLayout>,
+    pub wall_sliding: Handle<TextureAtlasLayout>,
+}
+
 /// Holds handles to player sprite assets.
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
+    pub steps: Vec<Handle<AudioSource>>,
     pub idle: Handle<Image>,
+    pub jumping: Handle<Image>,
+    pub running: Handle<Image>,
+    pub sliding: Handle<Image>,
+    pub wall_sliding: Handle<Image>,
 }
 
 impl FromWorld for PlayerAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            idle: assets.load("images/entities/player/player_idle.png"),
+            steps: vec![
+                assets.load("audio/sound_effects/step1.ogg"),
+                assets.load("audio/sound_effects/step2.ogg"),
+                assets.load("audio/sound_effects/step3.ogg"),
+                assets.load("audio/sound_effects/step4.ogg"),
+            ],
+            idle: assets.load("images/entities/player/idle.png"),
+            jumping: assets.load("images/entities/player/jumping.png"),
+            running: assets.load("images/entities/player/running.png"),
+            sliding: assets.load("images/entities/player/sliding.png"),
+            wall_sliding: assets.load("images/entities/player/wall_sliding.png"),
         }
     }
 }
