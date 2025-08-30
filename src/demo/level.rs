@@ -1,12 +1,9 @@
-//! Spawn the main level.
-
 use bevy::prelude::*;
 
 use crate::{
     asset_tracking::LoadResource,
     audio::music,
-    demo::helpers,
-    demo::player::{PlayerAssets, setup_player},
+    demo::{helpers, player::{self, setup_player}},
     screens::Screen,
 };
 
@@ -35,8 +32,7 @@ impl FromWorld for LevelAssets {
 pub fn spawn_level(
     mut commands: Commands,
     level_assets: Res<LevelAssets>,
-    player_assets: Res<PlayerAssets>,
-    texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    player_skin: Res<player::PlayerSkin>,
     asset_server: Res<AssetServer>,
 ) {
     info!("Spawning level and music");
@@ -49,7 +45,7 @@ pub fn spawn_level(
         Visibility::default(),
         StateScoped(Screen::Gameplay),
         children![
-            setup_player(player_assets, texture_atlas_layouts),
+            setup_player(player_skin),
             (
                 Name::new("Gameplay Music"),
                 music(level_assets.music.clone())

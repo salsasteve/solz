@@ -6,13 +6,24 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
+mod core;
+mod entities;
+mod gameplay;
+mod story;
 mod animation;
-pub mod helpers;
+mod helpers;
 pub mod level;
 mod movement;
-pub mod player;
+mod player;
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((
+        core::CorePlugin,
+        entities::EntityPlugins,
+        gameplay::GameplayPlugin,
+        story::StoryPlugin,
+    ));
+
     app.add_plugins((
         animation::plugin,
         level::plugin,
@@ -22,3 +33,38 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(TilemapPlugin);
     app.add_plugins(helpers::tiled::TiledMapPlugin);
 }
+
+
+// use bevy::prelude::*;
+// use bevy_ecs_tilemap::prelude::*;
+
+// mod core;
+// mod entities;
+// mod gameplay;
+// mod story;
+// pub mod helpers;
+// pub mod level;
+
+// pub struct DemoPlugin;
+
+// impl Plugin for DemoPlugin {
+//     fn build(&self, app: &mut App) {
+//         // Add new internal plugins (empty for now)
+//         app.add_plugins((
+//             core::CorePlugin,
+//             entities::EntityPlugins,
+//             gameplay::GameplayPlugin,
+//             story::StoryPlugin,
+//         ));
+
+//         // Keep ALL existing systems working
+//         app.add_plugins((
+//             animation::plugin,
+//             level::plugin,
+//             movement::plugin,
+//             player::plugin,
+//         ));
+//         app.add_plugins(TilemapPlugin);
+//         app.add_plugins(helpers::tiled::TiledMapPlugin);
+//     }
+// }

@@ -7,7 +7,7 @@
 use bevy::prelude::*;
 use std::time::Duration;
 
-use crate::demo::{movement::MovementController, player::PlayerAtlases};
+use crate::demo::{movement::MovementController, player::Player, player::PlayerSkin};
 
 /// Registers the player animation component and systems.
 pub(super) fn plugin(app: &mut App) {
@@ -26,18 +26,48 @@ pub(super) fn plugin(app: &mut App) {
 fn update_animation_movement(
     mut player_query: Query<(&MovementController, &mut Sprite, &mut PlayerAnimation)>,
 ) {
+    // for (controller, mut sprite, mut animation) in &mut player_query {
+    //     let dx = controller.intent.x;
+    //     if dx != 0.0 {
+    //         sprite.flip_x = dx < 0.0;
+    //     }
+
+    //     let animation_state = if controller.intent == Vec2::ZERO {
+    //         PlayerAnimationState::Idling
+    //     } else {
+    //         PlayerAnimationState::Walking
+    //     };
+    //     animation.update_state(animation_state);
+    // }
     for (controller, mut sprite, mut animation) in &mut player_query {
+        // flip sprite based on horizontal intent
         let dx = controller.intent.x;
         if dx != 0.0 {
             sprite.flip_x = dx < 0.0;
         }
 
-        let animation_state = if controller.intent == Vec2::ZERO {
+        // Decide animation state.
+        // Try to use controller flags if available (rename fields below to match your MovementController).
+        let state = if cfg!(any()) {
+            // placeholder; real logic below
             PlayerAnimationState::Idling
         } else {
-            PlayerAnimationState::Walking
+            if controller.is_wall_sliding {
+                PlayerAnimationState::WallSliding
+            } else if !controller.on_ground {
+                PlayerAnimationState::Jumping
+            } else if controller.is_sliding {
+                PlayerAnimationState::Sliding
+            } else if controller.is_running {
+                PlayerAnimationState::Running
+            } else if controller.intent != Vec2::ZERO {
+                PlayerAnimationState::Walking
+            } else {
+                PlayerAnimationState::Idling
+            }
         };
-        animation.update_state(animation_state);
+
+        animation.update_state(state);
     }
 }
 
@@ -49,28 +79,46 @@ fn update_animation_timer(time: Res<Time>, mut query: Query<&mut PlayerAnimation
 }
 
 /// Update the texture atlas to reflect changes in the animation.
-fn update_animation_atlas(mut query: Query<(&PlayerAnimation, &mut Sprite, &PlayerAtlases)>) {
-    for (animation, mut sprite, atlases) in &mut query {
+fn update_animation_atlas(
+    player_skin: Res<PlayerSkin>,
+    mut query: Query<(&PlayerAnimation, &mut Sprite), With<Player>>,
+) {
+    for (animation, mut sprite) in &mut query {
+        let visual = player_skin.get(animation.state.clone());
 
-        let desired_layout: Handle<TextureAtlasLayout> = match animation.state {
-            PlayerAnimationState::Idling => atlases.idle.clone(),
-            PlayerAnimationState::Running => atlases.running.clone(),
-            PlayerAnimationState::Walking => atlases.idle.clone(), 
-            PlayerAnimationState::Jumping => atlases.jumping.clone(),
-            PlayerAnimationState::Sliding => atlases.sliding.clone(),
-            PlayerAnimationState::WallSliding => atlases.wall_sliding.clone(),
-        };
+        // ensure the sprite uses the correct base image for this state
+        sprite.image = visual.image.clone();
 
-        if let Some(atlas) = sprite.texture_atlas.as_mut() {
-            if atlas.layout != desired_layout {
-                atlas.layout = desired_layout.clone();
-                // reset index to the animation's index for the new atlas
-                atlas.index = animation.get_atlas_index();
-                continue;
+        match visual.atlas {
+            Some(ref layout) => {
+                // compute a safe atlas index (wrap if necessary)
+                let mut idx = animation.get_atlas_index();
+                if visual.frames > 0 {
+                    idx = idx % visual.frames;
+                }
+
+                // ensure atlas exists and uses the correct layout + index
+                if sprite.texture_atlas.is_none() {
+                    sprite.texture_atlas = Some(TextureAtlas {
+                        layout: layout.clone(),
+                        index: idx,
+                    });
+                    continue;
+                }
+
+                if let Some(atlas) = sprite.texture_atlas.as_mut() {
+                    if atlas.layout != *layout {
+                        info!("Swapping atlas for state {:?} (index {})", animation.state, idx);
+                        atlas.layout = layout.clone();
+                        atlas.index = idx;
+                    } else if animation.changed() {
+                        atlas.index = idx;
+                    }
+                }
             }
-
-            if animation.changed() {
-                atlas.index = animation.get_atlas_index();
+            None => {
+                // single-image visual: clear atlas so renderer uses sprite.image only
+                sprite.texture_atlas = None;
             }
         }
     }
@@ -85,7 +133,7 @@ pub struct PlayerAnimation {
     state: PlayerAnimationState,
 }
 
-#[derive(Reflect, PartialEq)]
+#[derive(Clone,Debug, Reflect, PartialEq, Eq, Hash)]
 pub enum PlayerAnimationState {
     Idling,
     Walking,
